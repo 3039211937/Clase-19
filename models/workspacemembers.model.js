@@ -1,11 +1,7 @@
 import mongoose from "mongoose";
 
-const ws_membersSchema = new mongoose.Schema(
+const MemberWorkspaceSchema = new mongoose.Schema(
     {
-        id: {
-            type: Number,
-            unique: true
-        },
         fk_id_user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
@@ -22,11 +18,16 @@ const ws_membersSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ['admin', 'mod', 'user']
+            enum: ['Owner', 'Admin', 'User'],
+            default: 'User',
+            required: true
         }
     }
 )
 
-const Workspace_Member = mongoose.model ('Workspace Member', ws_membersSchema)
-
-export default Workspace_Member
+const MemberWorkspace = mongoose.model('MemberWorkspace', MemberWorkspaceSchema)
+export default MemberWorkspace
+/* 
+Continuar con estos modelos:
+- ChannelMessages
+*/
