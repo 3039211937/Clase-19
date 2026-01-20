@@ -1,3 +1,4 @@
+
 import { connectMongoDB } from "./config/mongoDB.config.js"
 import express from 'express'
 import authRouter from "./routes/auth.router.js"
@@ -49,13 +50,13 @@ app.listen(
 
     //Creo el espacio de trabajo de prueba
     const workspace = await workspaceRepository.create(
-        '69664b767fa3b6ffd51dcd7b',
+        '69664b767fa3b6ffd51dcd7b', //Remplazen por su id
         'test',
         'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
         'Descripcion del espacio de trabajo'
     )
     //Me agrego como miembro
-    await workspaceRepository.addMember(workspace._id, '69664b767fa3b6ffd51dcd7b', 'Owner')
+    await workspaceRepository.addMember(workspace._id, '69664b767fa3b6ffd51dcd7b' //Remplazen por su id, 'Owner')
 }
 
 crearEspacioDeTrabajo() */
