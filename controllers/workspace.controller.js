@@ -183,6 +183,10 @@ class WorkspaceController {
             })
         }
     }
+
+    async getById (request, response){
+        
+    }
 }
 
 const workspaceController = new WorkspaceController()
