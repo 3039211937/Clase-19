@@ -6,6 +6,7 @@ import randomMiddleware from "./middlewares/random.middleware.js"
 import cors from 'cors'
 import workspaceRouter from "./routes/workspace.router.js"
 import workspaceRepository from "./repository/workspace.repository.js"
+import messagesRepository from "./repository/messages.repository.js"
 
 connectMongoDB()
 
@@ -69,3 +70,5 @@ crearEspacioDeTrabajo() */
 2do: Crear endpoint para obtener espacios de trabajo asociados al usuario
 3ro: Probar con postman
 */
+
+messagesRepository.getAllByChannelId('6978c83ea4071a20cdf607d3').then(result => console.log(JSON.stringify(result)))
