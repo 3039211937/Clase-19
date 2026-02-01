@@ -71,4 +71,4 @@ crearEspacioDeTrabajo() */
 3ro: Probar con postman
 */
 
-messagesRepository.getAllByChannelId('6978c83ea4071a20cdf607d3').then(result => console.log(JSON.stringify(result)))
+/* messagesRepository.getAllByChannelId('6978c83ea4071a20cdf607d3').then(result => console.log(JSON.stringify(result))) */
