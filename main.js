@@ -16,7 +16,28 @@ const app = express()
 /* 
 Esto permite que otras direcciones distintas a la nuesta puedan consultar nuestro servidor
 */
-app.use(cors())
+
+
+const whitelist = [
+    'http://localhost:5173'
+];
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        // allow requests with no origin (Postman, curl, mobile apps)
+        if (!origin) return callback(null, true);
+
+        if (whitelist.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS not allowed'));
+        }
+    },
+    credentials: true, // only if you use cookies/auth headers
+};
+
+app.use(cors(corsOptions));
+
 
 //Habilita a mi servidor a recibir json por body
 /* 
@@ -30,7 +51,7 @@ app.use("/api/auth", authRouter)
 app.use("/api/workspace", workspaceRouter)
 
 app.listen(
-    8080, 
+    8080,
     () => {
         console.log('Nuestra app se escucha en el puerto 8080')
     }
