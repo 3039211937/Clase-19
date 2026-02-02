@@ -1,96 +1,82 @@
+import express from "express";
+import cors from "cors";
 
-import { connectMongoDB } from "./config/mongoDB.config.js"
-import express from 'express'
-import authRouter from "./routes/auth.router.js"
-import randomMiddleware from "./middlewares/random.middleware.js"
-import cors from 'cors'
-import workspaceRouter from "./routes/workspace.router.js"
-import workspaceRepository from "./repository/workspace.repository.js"
-import messagesRepository from "./repository/messages.repository.js"
+import { connectMongoDB } from "./config/mongoDB.config.js";
+import authRouter from "./routes/auth.router.js";
+import workspaceRouter from "./routes/workspace.router.js";
+import randomMiddleware from "./middlewares/random.middleware.js";
 
-connectMongoDB()
+// -----------------------------------------------------------------------------
+// APP
+// -----------------------------------------------------------------------------
+const app = express();
+const PORT = 8080;
 
-//Crear un servidor web (Express app)
-const app = express()
-
-/* 
-Esto permite que otras direcciones distintas a la nuesta puedan consultar nuestro servidor
-*/
-
-
+// -----------------------------------------------------------------------------
+// CORS
+// -----------------------------------------------------------------------------
 const whitelist = [
-    'http://localhost:5173',
-    'https://frontend-plrf.vercel.app',
+    "http://localhost:5173",
+    "https://frontend-plrf.vercel.app"
 ];
 
 const corsOptions = {
-    origin: function (origin, callback) {
-        // allow requests with no origin (Postman, curl, mobile apps)
+    origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-
-        if (whitelist.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('CORS not allowed'));
-        }
+        if (whitelist.includes(origin)) return callback(null, true);
+        return callback(new Error("CORS not allowed"));
     },
-    credentials: true, // only if you use cookies/auth headers
+    credentials: true
 };
 
 app.use(cors(corsOptions));
 
+// -----------------------------------------------------------------------------
+// JSON
+// -----------------------------------------------------------------------------
+app.use(express.json());
 
-//Habilita a mi servidor a recibir json por body
-/* 
-lee el request.headers.['content-type'] y si el valor es 'application/json' entonces guarda en request.body el json transformado
-*/
-app.use(express.json())
+// -----------------------------------------------------------------------------
+// LOG
+// -----------------------------------------------------------------------------
+app.use((req, res, next) => {
+    console.log(req.method, req.originalUrl);
+    next();
+});
 
+// -----------------------------------------------------------------------------
+// HEALTH (ANTES DE TODO)
+// -----------------------------------------------------------------------------
+app.get("/health", (req, res) => {
+    return res.json({ ok: true });
+});
 
+// -----------------------------------------------------------------------------
+// MIDDLEWARE CUSTOM
+// -----------------------------------------------------------------------------
+app.use(randomMiddleware);
 
-app.use("/api/auth", authRouter)
-app.use("/api/workspace", workspaceRouter)
+// -----------------------------------------------------------------------------
+// RUTAS
+// -----------------------------------------------------------------------------
+app.use("/api/auth", authRouter);
+app.use("/api/workspace", workspaceRouter);
 
-app.listen(
-    8080,
-    () => {
-        console.log('Nuestra app se escucha en el puerto 8080')
-    }
-)
+// -----------------------------------------------------------------------------
+// 404 FINAL (ULTIMO)
+// -----------------------------------------------------------------------------
+app.use((req, res) => {
+    return res.status(404).json({
+        error: "Not Found",
+        method: req.method,
+        path: req.originalUrl
+    });
+});
 
-/* mail_transporter.sendMail({
-    from: ENVIRONMENT.GMAIL_USERNAME,
-    to: ENVIRONMENT.GMAIL_USERNAME,
-    subject: 'Probando nodemailer',
-    html: `<h1>Probando nodemailer</h1>`
-}) */
-
-/* 
-//Quiero crear un espacio de trabajo de prueba
-*/
-
-/* async function crearEspacioDeTrabajo (){
-
-    //Creo el espacio de trabajo de prueba
-    const workspace = await workspaceRepository.create(
-        '69664b767fa3b6ffd51dcd7b', //Remplazen por su id
-        'test',
-        'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-        'Descripcion del espacio de trabajo'
-    )
-    //Me agrego como miembro
-    await workspaceRepository.addMember(workspace._id, '69664b767fa3b6ffd51dcd7b' //Remplazen por su id, 'Owner')
-}
-
-crearEspacioDeTrabajo() */
-
-/* 
-1ero:
-    Crear espacio de trabajo
-    Agregar miembro
-
-2do: Crear endpoint para obtener espacios de trabajo asociados al usuario
-3ro: Probar con postman
-*/
-
-/* messagesRepository.getAllByChannelId('6978c83ea4071a20cdf607d3').then(result => console.log(JSON.stringify(result))) */
+// -----------------------------------------------------------------------------
+// START
+// -----------------------------------------------------------------------------
+app.listen(PORT, async () => {
+    console.log(`Servidor escuchando en http://127.0.0.1:${PORT}`);
+    await connectMongoDB();
+});
