@@ -19,7 +19,8 @@ Esto permite que otras direcciones distintas a la nuesta puedan consultar nuestr
 
 
 const whitelist = [
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'https://frontend-plrf.vercel.app',
 ];
 
 const corsOptions = {
