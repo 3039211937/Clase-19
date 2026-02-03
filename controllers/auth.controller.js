@@ -7,7 +7,6 @@ import ServerError from "../helpers/error.helpers.js"
 
 class AuthController {
     async register(request, response) {
-
         try {
 
             const { email, password, username } = request.body
@@ -25,7 +24,7 @@ class AuthController {
 
             const verification_email_token = jwt.sign(
                 {
-                    email: email //Guardamos el email del usuario que se quiere registrar
+                    email: email
                 },
                 ENVIRONMENT.JWT_SECRET_KEY/* ,
                 {
@@ -59,7 +58,7 @@ class AuthController {
             })
         }
         catch (error) {
-            /* Si tiene status decimos que es un error controlado (osea es esperable) */
+            
             if (error.status) {
                 return response.json({
                     status: error.status,
@@ -81,9 +80,6 @@ class AuthController {
     async login(request, response) {
         try {
             const { email, password } = request.body
-            /* 
-            Aplicar validaciones sobre el email y la password
-            */
             if (!email) {
                 throw new ServerError('Debes enviar un email', 400)
             }
@@ -98,7 +94,6 @@ class AuthController {
             }
 
             if (!(await bcrypt.compare(password, usuario_encontrado.password))) {
-                /* Respondemos igual a que si no existiese para mayor seguridad */
                 throw new ServerError('Credenciales invalidas', 401)
             }
 
@@ -124,7 +119,6 @@ class AuthController {
             })
         }
         catch (error) {
-            /* Si tiene status decimos que es un error controlado (osea es esperable) */
             if (error.status) {
                 return response.json({
                     status: error.status,
@@ -201,7 +195,6 @@ class AuthController {
                 )
             }
 
-            /* Si tiene status decimos que es un error controlado (osea es esperable) */
             if (error.status) {
                 return response.json({
                     status: error.status,
@@ -224,11 +217,3 @@ class AuthController {
 const authController = new AuthController()
 export default authController
 
-
-
-/* 
-condicion sobre una variable
-un bucle de 100 a 1000 registros (donde no se consulta a ningun servicio externo)
-una consulta a DB (Debatible porque si la DB tiene millones de registros puede ser mas costoso)
-una consulta a otro servidor
-*/
