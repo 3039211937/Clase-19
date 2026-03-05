@@ -1,82 +1,36 @@
-import express from "express";
-import cors from "cors";
+import { connectMongoDB } from "./config/mongoDB.config.js"
+import express from 'express'
+import authRouter from "./routes/auth.router.js"
+import cors from 'cors'
+import workspaceRouter from "./routes/workspace.router.js"
+import { verifyApiKeyMiddleware } from "./middlewares/apikey.middleware.js"
+import { errorHandlerMiddleware } from "./middlewares/error.middleware.js"
 
-import { connectMongoDB } from "./config/mongoDB.config.js";
-import authRouter from "./routes/auth.router.js";
-import workspaceRouter from "./routes/workspace.router.js";
-import randomMiddleware from "./middlewares/random.middleware.js";
+connectMongoDB()
 
-// -----------------------------------------------------------------------------
-// APP
-// -----------------------------------------------------------------------------
-const app = express();
-const PORT = 8080;
+const app = express()
 
-// -----------------------------------------------------------------------------
-// CORS
-// -----------------------------------------------------------------------------
-const whitelist = [
-    "http://localhost:5173",
-    "https://frontend-plrf.vercel.app"
-];
 
-const corsOptions = {
-    origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (whitelist.includes(origin)) return callback(null, true);
-        return callback(new Error("CORS not allowed"));
-    },
-    credentials: true
-};
+app.use(cors())
+app.use(express.json())
+app.use(verifyApiKeyMiddleware)
 
-app.use(cors(corsOptions));
+app.get('/', (request, response) => {
+    response.json({
+        ok: true,
+        message: 'Servidor funcionando correctamente',
+        data: null
+    })
+})
 
-// -----------------------------------------------------------------------------
-// JSON
-// -----------------------------------------------------------------------------
-app.use(express.json());
+app.use("/api/auth", authRouter)
+app.use("/api/workspace", workspaceRouter)
 
-// -----------------------------------------------------------------------------
-// LOG
-// -----------------------------------------------------------------------------
-app.use((req, res, next) => {
-    console.log(req.method, req.originalUrl);
-    next();
-});
+app.use(errorHandlerMiddleware)
 
-// -----------------------------------------------------------------------------
-// HEALTH (ANTES DE TODO)
-// -----------------------------------------------------------------------------
-app.get("/health", (req, res) => {
-    return res.json({ ok: true });
-});
-
-// -----------------------------------------------------------------------------
-// MIDDLEWARE CUSTOM
-// -----------------------------------------------------------------------------
-app.use(randomMiddleware);
-
-// -----------------------------------------------------------------------------
-// RUTAS
-// -----------------------------------------------------------------------------
-app.use("/api/auth", authRouter);
-app.use("/api/workspace", workspaceRouter);
-
-// -----------------------------------------------------------------------------
-// 404 FINAL (ULTIMO)
-// -----------------------------------------------------------------------------
-app.use((req, res) => {
-    return res.status(404).json({
-        error: "Not Found",
-        method: req.method,
-        path: req.originalUrl
-    });
-});
-
-// -----------------------------------------------------------------------------
-// START
-// -----------------------------------------------------------------------------
-app.listen(PORT, async () => {
-    console.log(`Servidor escuchando en http://127.0.0.1:${PORT}`);
-    await connectMongoDB();
-});
+app.listen(
+    8082,
+    () => {
+        console.log('Nuestra app se escucha en el puerto 8082')
+    }
+)
