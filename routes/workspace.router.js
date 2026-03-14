@@ -6,53 +6,120 @@ import { channelController } from "../controllers/channel.controller.js";
 import channelMiddleware from "../middlewares/channel.middleware.js";
 import messagesController from "../controllers/messages.controller.js";
 
-const workspaceRouter = express.Router()
+const workspaceRouter = express.Router();
 
-workspaceRouter.get('/', authMiddleware, workspaceController.getWorkspaces)
-workspaceRouter.post('/', authMiddleware, workspaceController.create)
-
-workspaceRouter.get('/:workspace_id', authMiddleware, workspaceMiddleware(), workspaceController.getById)
-
-workspaceRouter.delete('/:workspace_id', authMiddleware, workspaceController.delete)
-workspaceRouter.post(
-    '/:workspace_id/members', 
-    authMiddleware, 
-    workspaceMiddleware(['Owner', 'Admin']), 
-    workspaceController.addMemberRequest
-)
-workspaceRouter.get('/:workspace_id/members/accept-invitation', workspaceController.acceptInvitation)
+/* =========================
+   PUBLIC INVITATION ENDPOINT
+   (NO AUTH / NO API KEY)
+========================= */
 
 workspaceRouter.get(
-    '/:workspace_id/channels',
-    authMiddleware,
-    workspaceMiddleware(),
-    channelController.getAllByWorkspaceId
-)
+  "/members/accept-invitation",
+  workspaceController.acceptInvitation,
+);
 
-workspaceRouter.post(
-    '/:workspace_id/channels',
-    authMiddleware,
-    workspaceMiddleware(['Owner', 'Admin']),
-    channelController.create
-)
+/* =========================
+   WORKSPACES
+========================= */
 
+workspaceRouter.get("/", authMiddleware, workspaceController.getWorkspaces);
 
-workspaceRouter.post(
-    '/:workspace_id/channels/:channel_id/messages',
-    authMiddleware,
-    workspaceMiddleware(),
-    channelMiddleware,
-    messagesController.create
-)
-
+workspaceRouter.post("/", authMiddleware, workspaceController.create);
 
 workspaceRouter.get(
-    '/:workspace_id/channels/:channel_id/messages',
-    authMiddleware,
-    workspaceMiddleware(),
-    channelMiddleware,
-    messagesController.getByChannelId
-)
+  "/:workspace_id",
+  authMiddleware,
+  workspaceMiddleware(),
+  workspaceController.getById,
+);
 
+/* =========================
+   UPDATE WORKSPACE
+========================= */
 
-export default workspaceRouter
+workspaceRouter.put(
+  "/:workspace_id",
+  authMiddleware,
+  workspaceMiddleware(["Owner", "Admin"]),
+  workspaceController.update,
+);
+
+/* =========================
+   DELETE WORKSPACE
+========================= */
+
+workspaceRouter.delete(
+  "/:workspace_id",
+  authMiddleware,
+  workspaceMiddleware(["Owner", "Admin"]),
+  workspaceController.delete,
+);
+
+/* =========================
+   MEMBERS
+========================= */
+
+workspaceRouter.get(
+  "/:workspace_id/members",
+  authMiddleware,
+  workspaceMiddleware(),
+  workspaceController.getMembers,
+);
+
+workspaceRouter.delete(
+  "/:workspace_id/members/:member_id",
+  authMiddleware,
+  workspaceMiddleware(["Owner", "Admin"]),
+  workspaceController.removeMember,
+);
+
+/* =========================
+   INVITE MEMBER
+========================= */
+
+workspaceRouter.post(
+  "/:workspace_id/members",
+  authMiddleware,
+  workspaceMiddleware(["Owner", "Admin"]),
+  workspaceController.addMemberRequest,
+);
+
+/* =========================
+   CHANNELS
+========================= */
+
+workspaceRouter.get(
+  "/:workspace_id/channels",
+  authMiddleware,
+  workspaceMiddleware(),
+  channelController.getAllByWorkspaceId,
+);
+
+workspaceRouter.post(
+  "/:workspace_id/channels",
+  authMiddleware,
+  workspaceMiddleware(["Owner", "Admin"]),
+  channelController.create,
+);
+
+/* =========================
+   CHANNEL MESSAGES
+========================= */
+
+workspaceRouter.post(
+  "/:workspace_id/channels/:channel_id/messages",
+  authMiddleware,
+  workspaceMiddleware(),
+  channelMiddleware,
+  messagesController.create,
+);
+
+workspaceRouter.get(
+  "/:workspace_id/channels/:channel_id/messages",
+  authMiddleware,
+  workspaceMiddleware(),
+  channelMiddleware,
+  messagesController.getByChannelId,
+);
+
+export default workspaceRouter;

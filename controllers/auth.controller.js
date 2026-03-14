@@ -20,14 +20,12 @@ class AuthController {
         throw new ServerError("El email ya esta registrado", 400);
       }
 
-      let hashed_password = await bcrypt.hash(password, 10);
+      const hashed_password = await bcrypt.hash(password, 10);
 
       await userRepository.crear(email, hashed_password, username);
 
       const verification_email_token = jwt.sign(
-        {
-          email: email,
-        },
+        { email: email },
         ENVIRONMENT.JWT_SECRET_KEY,
       );
 
@@ -36,15 +34,17 @@ class AuthController {
         to: email,
         subject: "Verifica tu email",
         html: `
-                    <h1>Bienvenido ${username}</h1>
-                    <p>Necesitamos que verifiques tu mail</p>
-                    <p>Haz click en "Verificar" para verificar este mail</p>
-                    <a 
-                    href='http://localhost:8080/api/auth/verify-email?verification_email_token=${verification_email_token}'
-                    >Verificar</a>
-                    <br>
-                    <span>Si desconoces este registro desestima este mail</span>
-                `,
+          <h1>Bienvenido ${username}</h1>
+          <p>Necesitamos que verifiques tu mail</p>
+          <p>Haz click en "Verificar" para verificar este mail</p>
+
+          <a href='http://localhost:8080/api/auth/verify-email?verification_email_token=${verification_email_token}'>
+            Verificar
+          </a>
+
+          <br>
+          <span>Si desconoces este registro desestima este mail</span>
+        `,
       });
 
       return response.json({
@@ -90,7 +90,12 @@ class AuthController {
         throw new ServerError("Credenciales invalidas", 401);
       }
 
-      if (!(await bcrypt.compare(password, usuario_encontrado.password))) {
+      const password_valido = await bcrypt.compare(
+        password,
+        usuario_encontrado.password,
+      );
+
+      if (!password_valido) {
         throw new ServerError("Credenciales invalidas", 401);
       }
 
@@ -136,11 +141,19 @@ class AuthController {
   async logout(request, response) {
     try {
       /*
-            With JWT authentication the logout is handled
-            on the frontend by deleting the token.
-            This endpoint exists for API consistency
-            and future token blacklisting if needed.
-            */
+      Con autenticacion basada en JWT, el logout se maneja
+      principalmente en el frontend eliminando el token
+      almacenado en el cliente.
+
+      Este endpoint existe para mantener consistencia en la API
+      y permitir futuras mejoras de seguridad como:
+
+      - blacklist de tokens
+      - registro de sesiones
+      - auditoria de actividad de usuarios
+      */
+
+      console.log("Logout usuario:", request.user?.email);
 
       return response.json({
         ok: true,
@@ -218,4 +231,5 @@ class AuthController {
 }
 
 const authController = new AuthController();
+
 export default authController;
