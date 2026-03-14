@@ -1,12 +1,19 @@
+import mongoose from "mongoose";
 import ChannelMessages from "../models/ChannelsMessages.model.js";
 
 class MessagesRepository {
-  async create(member_id, content, channel_id) {
-    return await ChannelMessages.create({
-      fk_workspace_member_id: member_id,
-      mensaje: content,
-      fk_workspace_channel_id: channel_id,
+  /* =========================
+     CREAR MENSAJE
+  ========================= */
+
+  async create(member_id, mensaje, channel_id) {
+    const message = await ChannelMessages.create({
+      fk_workspace_member_id: new mongoose.Types.ObjectId(member_id),
+      mensaje: mensaje,
+      fk_workspace_channel_id: new mongoose.Types.ObjectId(channel_id),
     });
+
+    return message;
   }
 
   /* =========================
@@ -15,15 +22,23 @@ class MessagesRepository {
 
   async getByChannelId(channel_id) {
     const messages = await ChannelMessages.find({
-      fk_workspace_channel_id: channel_id,
-    }).populate({
-      path: "fk_workspace_member_id",
-      select: "role fk_id_user",
-      populate: {
-        path: "fk_id_user",
-        select: "username email",
-      },
-    });
+      fk_workspace_channel_id: new mongoose.Types.ObjectId(channel_id),
+    })
+
+      /* orden correcto para chat */
+      .sort({ created_at: 1 })
+
+      /* traer usuario */
+      .populate({
+        path: "fk_workspace_member_id",
+        select: "role fk_id_user",
+        populate: {
+          path: "fk_id_user",
+          select: "username email",
+        },
+      })
+
+      .lean();
 
     return messages;
   }

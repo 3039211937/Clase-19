@@ -5,43 +5,39 @@ class MessagesController {
      CREAR MENSAJE
   ========================= */
 
-  async create(request, response) {
+  async create(req, res) {
     try {
-      const { mensaje } = request.body; // el frontend envía "mensaje"
-      const member_id = request.member._id;
-      const { channel_id } = request.params;
+      const { mensaje } = req.body;
+      const { channel_id } = req.params;
 
-      const message_created = await messagesRepository.create(
+      const member_id = req.member._id;
+
+      if (!mensaje || !channel_id) {
+        return res.status(400).json({
+          ok: false,
+          message: "Faltan datos",
+        });
+      }
+
+      const message = await messagesRepository.create(
         member_id,
         mensaje,
         channel_id,
       );
 
-      return response.json({
+      return res.status(201).json({
         ok: true,
-        status: 201,
-        message: "Mensaje creado con éxito",
+        message: "Mensaje creado",
         data: {
-          message: message_created,
+          message,
         },
       });
     } catch (error) {
-      console.log("Error en crear mensaje", error);
+      console.error("Error creando mensaje:", error);
 
-      if (error.status) {
-        return response.json({
-          status: error.status,
-          ok: false,
-          message: error.message,
-          data: null,
-        });
-      }
-
-      return response.json({
+      return res.status(500).json({
         ok: false,
-        status: 500,
         message: "Error interno del servidor",
-        data: null,
       });
     }
   }
@@ -50,42 +46,27 @@ class MessagesController {
      OBTENER MENSAJES DEL CANAL
   ========================= */
 
-  async getByChannelId(request, response) {
+  async getByChannelId(req, res) {
     try {
-      const { channel_id } = request.params;
+      const { channel_id } = req.params;
 
       const messages = await messagesRepository.getByChannelId(channel_id);
 
-      return response.json({
+      return res.status(200).json({
         ok: true,
-        status: 200,
-        message: "Mensajes obtenidos con éxito",
         data: {
           messages,
         },
       });
     } catch (error) {
-      console.log("Error obteniendo mensajes", error);
+      console.error("Error obteniendo mensajes:", error);
 
-      if (error.status) {
-        return response.json({
-          status: error.status,
-          ok: false,
-          message: error.message,
-          data: null,
-        });
-      }
-
-      return response.json({
+      return res.status(500).json({
         ok: false,
-        status: 500,
         message: "Error interno del servidor",
-        data: null,
       });
     }
   }
 }
 
-const messagesController = new MessagesController();
-
-export default messagesController;
+export default new MessagesController();
