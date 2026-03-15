@@ -7,24 +7,42 @@ import { verifyApiKeyMiddleware } from "./middlewares/apikey.middleware.js";
 import { errorHandlerMiddleware } from "./middlewares/error.middleware.js";
 
 /*
-Conectamos a MongoDB
+==================================================
+CONEXIÓN A MONGODB
+==================================================
 */
 connectMongoDB();
 
 const app = express();
 
 /*
-Middlewares globales
+==================================================
+MIDDLEWARES
+==================================================
 */
-app.use(cors());
+
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://frontend-rose-one-24.vercel.app",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-api-key"],
+  }),
+);
+
 app.use(express.json());
 app.use(verifyApiKeyMiddleware);
 
 /*
-Endpoint de prueba
+==================================================
+ENDPOINT DE PRUEBA
+==================================================
 */
-app.get("/", (req, res) => {
-  res.json({
+
+app.get("/", (request, response) => {
+  response.json({
     ok: true,
     message: "Servidor funcionando correctamente",
     data: null,
@@ -32,18 +50,48 @@ app.get("/", (req, res) => {
 });
 
 /*
-Rutas principales
+==================================================
+RUTAS
+==================================================
 */
+
 app.use("/api/auth", authRouter);
 app.use("/api/workspace", workspaceRouter);
 
 /*
-Middleware global de errores
+==================================================
+MANEJO GLOBAL DE ERRORES
+==================================================
 */
+
 app.use(errorHandlerMiddleware);
 
 /*
-Exportamos la app para Vercel
-(NO usar app.listen en serverless)
+==================================================
+MODO LOCAL (DESARROLLO)
+==================================================
+
+Cuando ejecutamos con:
+npm run dev
+
+levantamos el servidor normalmente
 */
+
+if (process.env.NODE_ENV !== "production") {
+  const PORT = 8082;
+
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  });
+}
+
+/*
+==================================================
+EXPORT PARA VERCEL
+==================================================
+
+Vercel utiliza funciones serverless y necesita
+que exportemos la app en lugar de usar listen().
+*/
+
 export default app;
