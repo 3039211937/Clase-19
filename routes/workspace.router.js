@@ -102,6 +102,14 @@ workspaceRouter.post(
   channelController.create,
 );
 
+workspaceRouter.delete(
+  "/:workspace_id/channels/:channel_id",
+  authMiddleware,
+  workspaceMiddleware(["Owner", "Admin"]),
+  channelMiddleware,
+  channelController.delete,
+);
+
 /* =========================
    CHANNEL MESSAGES
 ========================= */
