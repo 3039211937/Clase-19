@@ -6,28 +6,25 @@ import workspaceRouter from "./routes/workspace.router.js";
 import { verifyApiKeyMiddleware } from "./middlewares/apikey.middleware.js";
 import { errorHandlerMiddleware } from "./middlewares/error.middleware.js";
 
+/*
+Conectamos a MongoDB
+*/
 connectMongoDB();
 
 const app = express();
 
 /*
-==============================
-MIDDLEWARES
-==============================
+Middlewares globales
 */
-
 app.use(cors());
 app.use(express.json());
 app.use(verifyApiKeyMiddleware);
 
 /*
-==============================
-ENDPOINT DE PRUEBA
-==============================
+Endpoint de prueba
 */
-
-app.get("/", (request, response) => {
-  response.json({
+app.get("/", (req, res) => {
+  res.json({
     ok: true,
     message: "Servidor funcionando correctamente",
     data: null,
@@ -35,43 +32,18 @@ app.get("/", (request, response) => {
 });
 
 /*
-==============================
-RUTAS
-==============================
+Rutas principales
 */
-
 app.use("/api/auth", authRouter);
 app.use("/api/workspace", workspaceRouter);
 
 /*
-==============================
-MANEJO DE ERRORES
-==============================
+Middleware global de errores
 */
-
 app.use(errorHandlerMiddleware);
 
 /*
-==============================
-MODO LOCAL (NODE)
-==============================
-
-Si el archivo se ejecuta directamente con Node,
-levantamos el servidor local en el puerto 8082.
+Exportamos la app para Vercel
+(NO usar app.listen en serverless)
 */
-
-if (process.env.NODE_ENV !== "production") {
-  const PORT = 8082;
-
-  app.listen(PORT, () => {
-    console.log(`Servidor local corriendo en http://localhost:${PORT}`);
-  });
-}
-
-/*
-==============================
-EXPORT PARA VERCEL
-==============================
-*/
-
 export default app;
