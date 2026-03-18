@@ -6,13 +6,6 @@ import workspaceRouter from "./routes/workspace.router.js";
 import { verifyApiKeyMiddleware } from "./middlewares/apikey.middleware.js";
 import { errorHandlerMiddleware } from "./middlewares/error.middleware.js";
 
-/*
-==================================================
-CONEXIÓN A MONGODB
-==================================================
-*/
-connectMongoDB();
-
 const app = express();
 
 /*
@@ -70,28 +63,45 @@ app.use(errorHandlerMiddleware);
 ==================================================
 MODO LOCAL (DESARROLLO)
 ==================================================
-
-Cuando ejecutamos con:
-npm run dev
-
-levantamos el servidor normalmente
 */
 
 if (process.env.NODE_ENV !== "production") {
   const PORT = 8082;
 
-  app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
-  });
+  const startServer = async () => {
+    try {
+      await connectMongoDB(); // ✅ FIX: wait for DB
+
+      app.listen(PORT, () => {
+        console.log(`Servidor corriendo en http://localhost:${PORT}`);
+      });
+    } catch (error) {
+      console.error("Error iniciando el servidor:", error);
+    }
+  };
+
+  startServer();
+}
+
+/*
+==================================================
+MODO VERCEL (SERVERLESS)
+==================================================
+
+En Vercel no usamos listen().
+Cada request ejecuta la función.
+
+Igualmente necesitamos asegurar conexión Mongo.
+*/
+
+if (process.env.NODE_ENV === "production") {
+  connectMongoDB(); // 🔁 usa cache global
 }
 
 /*
 ==================================================
 EXPORT PARA VERCEL
 ==================================================
-
-Vercel utiliza funciones serverless y necesita
-que exportemos la app en lugar de usar listen().
 */
 
 export default app;

@@ -24,26 +24,28 @@ class AuthController {
 
       await userRepository.crear(email, hashed_password, username);
 
-      const verification_email_token = jwt.sign(
-        { email: email },
-        ENVIRONMENT.JWT_SECRET_KEY,
-      );
+      const token = jwt.sign({ email }, ENVIRONMENT.JWT_SECRET_KEY, {
+        expiresIn: "24h",
+      });
 
-      mail_transporter.sendMail({
-        from: ENVIRONMENT.GMAIL_USERNAME,
+      console.log("Sending verification email to:", email);
+
+      await mail_transporter.sendMail({
         to: email,
+        from: ENVIRONMENT.GMAIL_USERNAME,
         subject: "Verifica tu email",
         html: `
           <h1>Bienvenido ${username}</h1>
-          <p>Necesitamos que verifiques tu mail</p>
-          <p>Haz click en "Verificar" para verificar este mail</p>
 
-          <a href='http://localhost:8080/api/auth/verify-email?verification_email_token=${verification_email_token}'>
-            Verificar
+          <p>Necesitamos que verifiques tu email</p>
+
+          <p>Si no reconoces este registro, puedes ignorar este mensaje</p>
+
+          <p>Haz click en el siguiente botón para verificar tu cuenta:</p>
+
+          <a href='${ENVIRONMENT.URL_FRONTEND}/verify-email?token=${token}'>
+            Verificar email
           </a>
-
-          <br>
-          <span>Si desconoces este registro desestima este mail</span>
         `,
       });
 
@@ -54,6 +56,8 @@ class AuthController {
         data: null,
       });
     } catch (error) {
+      console.error("REGISTER ERROR:", error);
+
       if (error.status) {
         return response.json({
           status: error.status,
@@ -66,7 +70,7 @@ class AuthController {
       return response.json({
         ok: false,
         status: 500,
-        message: "Error interno del servidor",
+        message: error.message || "Error interno del servidor",
         data: null,
       });
     }
@@ -78,6 +82,10 @@ class AuthController {
 
       if (!email) {
         throw new ServerError("Debes enviar un email", 400);
+      }
+
+      if (!password) {
+        throw new ServerError("Debes enviar una contraseña", 400);
       }
 
       if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
@@ -106,20 +114,24 @@ class AuthController {
       const datos_del_token = {
         username: usuario_encontrado.username,
         email: usuario_encontrado.email,
-        id: usuario_encontrado.id,
+        id: usuario_encontrado._id,
       };
 
-      const auth_token = jwt.sign(datos_del_token, ENVIRONMENT.JWT_SECRET_KEY);
+      const auth_token = jwt.sign(datos_del_token, ENVIRONMENT.JWT_SECRET_KEY, {
+        expiresIn: "24h",
+      });
 
       return response.json({
         message: "Inicio de sesion exitoso",
         ok: true,
         status: 200,
         data: {
-          auth_token: auth_token,
+          auth_token,
         },
       });
     } catch (error) {
+      console.error("LOGIN ERROR:", error);
+
       if (error.status) {
         return response.json({
           status: error.status,
@@ -132,7 +144,7 @@ class AuthController {
       return response.json({
         ok: false,
         status: 500,
-        message: "Error interno del servidor",
+        message: error.message || "Error interno del servidor",
         data: null,
       });
     }
@@ -140,19 +152,6 @@ class AuthController {
 
   async logout(request, response) {
     try {
-      /*
-      Con autenticacion basada en JWT, el logout se maneja
-      principalmente en el frontend eliminando el token
-      almacenado en el cliente.
-
-      Este endpoint existe para mantener consistencia en la API
-      y permitir futuras mejoras de seguridad como:
-
-      - blacklist de tokens
-      - registro de sesiones
-      - auditoria de actividad de usuarios
-      */
-
       console.log("Logout usuario:", request.user?.email);
 
       return response.json({
@@ -162,6 +161,8 @@ class AuthController {
         data: null,
       });
     } catch (error) {
+      console.error("LOGOUT ERROR:", error);
+
       return response.json({
         ok: false,
         status: 500,
@@ -173,16 +174,13 @@ class AuthController {
 
   async verifyEmail(request, response) {
     try {
-      const { verification_email_token } = request.query;
+      const { token } = request.query;
 
-      if (!verification_email_token) {
+      if (!token) {
         throw new ServerError("No se envio el token de verificacion", 400);
       }
 
-      const { email } = jwt.verify(
-        verification_email_token,
-        ENVIRONMENT.JWT_SECRET_KEY,
-      );
+      const { email } = jwt.verify(token, ENVIRONMENT.JWT_SECRET_KEY);
 
       const user_found = await userRepository.buscarUnoPorEmail(email);
 
@@ -191,22 +189,32 @@ class AuthController {
       }
 
       if (user_found.email_verified) {
-        throw new ServerError("Usuario ya verificado", 400);
+        return response.json({
+          ok: true,
+          status: 200,
+          message: "Usuario ya verificado",
+          data: null,
+        });
       }
 
       await userRepository.actualizarPorId(user_found._id, {
         email_verified: true,
       });
 
-      return response.redirect(
-        ENVIRONMENT.URL_FRONTEND + "/login?from=email-validated",
-      );
+      return response.json({
+        ok: true,
+        status: 200,
+        message: "Email verificado correctamente",
+        data: null,
+      });
     } catch (error) {
+      console.error("VERIFY EMAIL ERROR:", error);
+
       if (error instanceof jwt.JsonWebTokenError) {
         return response.json({
           ok: false,
           status: 401,
-          message: "No autorizado",
+          message: "Token invalido o expirado",
           data: null,
         });
       }
@@ -223,7 +231,7 @@ class AuthController {
       return response.json({
         ok: false,
         status: 500,
-        message: "Error interno del servidor",
+        message: error.message || "Error interno del servidor",
         data: null,
       });
     }
