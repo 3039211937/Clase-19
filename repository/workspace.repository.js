@@ -26,15 +26,20 @@ class WorkspaceRepository {
       (member) => member.fk_id_workspace !== null,
     );
 
-    return members_workspace.map((member_workspace) => ({
-      member_id: member_workspace._id,
-      member_role: member_workspace.role,
-      member_id_user: member_workspace.fk_id_user,
+    return members_workspace.map((member_workspace) => {
+      const ws = member_workspace.fk_id_workspace;
 
-      workspace_image: member_workspace.fk_id_workspace.image,
-      workspace_title: member_workspace.fk_id_workspace.title,
-      workspace_id: member_workspace.fk_id_workspace._id,
-    }));
+      return {
+        member_id: member_workspace._id,
+        member_role: member_workspace.role,
+        member_id_user: member_workspace.fk_id_user,
+
+        workspace_id: ws._id,
+        workspace_title: ws.title,
+        workspace_image: ws.image,
+        description: ws.description || "", // ✅ FIX HERE
+      };
+    });
   }
 
   /* =========================
@@ -119,7 +124,11 @@ class WorkspaceRepository {
   ========================= */
 
   async updateById(workspace_id, data) {
-    return await Workspace.findByIdAndUpdate(workspace_id, data, { new: true });
+    return await Workspace.findByIdAndUpdate(
+      workspace_id,
+      data,
+      { new: true }, // ✅ already correct
+    );
   }
 }
 

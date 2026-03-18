@@ -15,7 +15,16 @@ class WorkspaceController {
   async getWorkspaces(request, response) {
     const user_id = request.user.id;
 
-    const workspaces = await workspaceRepository.getWorkspacesByUserId(user_id);
+    const workspaces_raw =
+      await workspaceRepository.getWorkspacesByUserId(user_id);
+
+    // ✅ NORMALIZACIÓN CONSISTENTE
+    const workspaces = workspaces_raw.map((w) => ({
+      workspace_id: w._id?.toString() || w.workspace_id,
+      workspace_title: w.title || w.workspace_title,
+      description: w.description || w.workspace_description || "",
+      image: w.image || "",
+    }));
 
     response.json({
       ok: true,
@@ -57,7 +66,6 @@ class WorkspaceController {
 
   async delete(request, response) {
     const user_id = request.user.id;
-
     const { workspace_id } = request.params;
 
     await workspaceService.deleteFromUser(workspace_id, user_id);
@@ -134,7 +142,6 @@ class WorkspaceController {
 
   async addMemberRequest(request, response) {
     const { email, role } = request.body;
-
     const workspace = request.workspace;
 
     const user_to_invite = await userRepository.buscarUnoPorEmail(email);
@@ -177,7 +184,7 @@ class WorkspaceController {
 
         <p>Da click en "Aceptar invitacion" para unirte al workspace</p>
 
-        <a href='${ENVIRONMENT.URL_FRONTEND}accept-invitation?token=${token}'>
+        <a href='${ENVIRONMENT.URL_FRONTEND}/accept-invitation?token=${token}'>
           Aceptar invitacion
         </a>
       `,
@@ -247,7 +254,6 @@ class WorkspaceController {
   async update(request, response) {
     try {
       const { workspace_id } = request.params;
-
       const { title, description, image } = request.body;
 
       const updated_workspace = await workspaceRepository.updateById(
@@ -281,5 +287,4 @@ class WorkspaceController {
 }
 
 const workspaceController = new WorkspaceController();
-
 export default workspaceController;
