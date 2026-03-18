@@ -30,6 +30,27 @@ app.use(verifyApiKeyMiddleware);
 
 /*
 ==================================================
+CRITICAL FIX → ENSURE DB BEFORE ROUTES
+==================================================
+*/
+
+app.use(async (req, res, next) => {
+  try {
+    await connectMongoDB(); // ✅ THIS FIXES VERCEL
+    next();
+  } catch (error) {
+    console.error("DB CONNECTION ERROR:", error);
+
+    return res.status(500).json({
+      ok: false,
+      status: 500,
+      message: "Error conectando a la base de datos",
+    });
+  }
+});
+
+/*
+==================================================
 ENDPOINT DE PRUEBA
 ==================================================
 */
@@ -70,7 +91,7 @@ if (process.env.NODE_ENV !== "production") {
 
   const startServer = async () => {
     try {
-      await connectMongoDB(); // ✅ FIX: wait for DB
+      await connectMongoDB(); // ✅ local startup safe
 
       app.listen(PORT, () => {
         console.log(`Servidor corriendo en http://localhost:${PORT}`);
@@ -81,21 +102,6 @@ if (process.env.NODE_ENV !== "production") {
   };
 
   startServer();
-}
-
-/*
-==================================================
-MODO VERCEL (SERVERLESS)
-==================================================
-
-En Vercel no usamos listen().
-Cada request ejecuta la función.
-
-Igualmente necesitamos asegurar conexión Mongo.
-*/
-
-if (process.env.NODE_ENV === "production") {
-  connectMongoDB(); // 🔁 usa cache global
 }
 
 /*
