@@ -19,6 +19,7 @@ class MessagesController {
         });
       }
 
+      // ✅ repository already returns populated message
       const message = await messagesRepository.create(
         member_id,
         mensaje,

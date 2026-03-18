@@ -13,22 +13,8 @@ class MessagesRepository {
       fk_workspace_channel_id: new mongoose.Types.ObjectId(channel_id),
     });
 
-    return message;
-  }
-
-  /* =========================
-     OBTENER MENSAJES POR CANAL
-  ========================= */
-
-  async getByChannelId(channel_id) {
-    const messages = await ChannelMessages.find({
-      fk_workspace_channel_id: new mongoose.Types.ObjectId(channel_id),
-    })
-
-      /* orden correcto para chat */
-      .sort({ created_at: 1 })
-
-      /* traer usuario */
+    // 🔥 IMPORTANT: return populated message
+    const populatedMessage = await ChannelMessages.findById(message._id)
       .populate({
         path: "fk_workspace_member_id",
         select: "role fk_id_user",
@@ -37,10 +23,29 @@ class MessagesRepository {
           select: "username email",
         },
       })
-
       .lean();
 
-    return messages;
+    return populatedMessage;
+  }
+
+  /* =========================
+     OBTENER MENSAJES POR CANAL
+  ========================= */
+
+  async getByChannelId(channel_id) {
+    return await ChannelMessages.find({
+      fk_workspace_channel_id: new mongoose.Types.ObjectId(channel_id),
+    })
+      .sort({ created_at: 1 })
+      .populate({
+        path: "fk_workspace_member_id",
+        select: "role fk_id_user",
+        populate: {
+          path: "fk_id_user",
+          select: "username email",
+        },
+      })
+      .lean();
   }
 }
 
